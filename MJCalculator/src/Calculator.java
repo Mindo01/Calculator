@@ -27,7 +27,7 @@ public class Calculator extends JFrame {
 	int openCount = 0;	// 괄호 ( 개수
 	int closeCount = 0;	// 괄호 ) 개수
 	boolean resFlag = false;	// 결과값 출력한 바로 직후면 true
-	int zeroCount = 0;			// 0 카운트
+	int zeroCount = 0;			// 0 카운트 / 0 : 0이 없음 / 1 : 0이 이미 하나 입력되어 더이상 입력불가 / 2 : 앞에 0아닌 다른 수나 소수점이 있어 0 제한없이 입력 가능
 	boolean dotFlag = false;	// 소수점 플래그. 숫자 뒤, 연산자 지나친 후엔 false / .을 이미 사용한 후엔 true (2.12.34 방지)
 	/* 후위연산식 모드 때 사용 */
 	String resStr = "";
@@ -133,11 +133,11 @@ public class Calculator extends JFrame {
 						break;
 					}
 				case 4: case 5: case 6: case 8: case 9: case 10: case 12: case 13: case 14:
-					/* 제로가 한 개 쳐지나요~ */
+					/* 제로가 한 개 이미 입력되어 있을 때 */
 					if (zeroCount == 1)
 					{
 						bef = bef.substring(0, bef.length()-1);
-						zeroCount = 2;
+						zeroCount = 2;	// 제로 이외의 숫자가 입력되었거나, .소수점이 입력되어 0을 무제한 입력가능한 상태로 만듬
 					}
 					break;
 				/* 연산자일 경우 */
@@ -148,24 +148,7 @@ public class Calculator extends JFrame {
 					break;
 				/* 괄호 입력 시 */
 				case 15 :
-					if (braceFlag == 0)
-					{
-						/* ()(), num()일 때, 곱하기로 처리 */
-						if ((bef.length() > 0) && (((ch=bef.charAt(bef.length()-1)) >= 48 && ch <= 57) || ch == ')'))
-						{
-							input = "x(";
-						}
-						else
-							input = "(";
-					}
-					else
-					{
-						if (braceFlag == 1)
-						{
-							input = ")";
-						}
-					}
-					braceFlag = (braceFlag + 1) % 3;
+
 					System.out.println("brace : "+braceFlag);
 					break;
 				/* . 일때 */
