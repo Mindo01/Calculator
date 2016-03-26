@@ -16,14 +16,13 @@ public class Calculator extends JFrame {
 	JPanel show, key;
 	Labels exp, res;
 	/* 그리드 레이아웃에 저장할 순서대로 스트링값 배열 생성 */
-	String[] texts = {"C", "%", "x", "←", "7", "8", "9", "-", "4", "5", "6", "+", "1", "2", "3", "()", "0", ".", "+/-", "="};
+	String[] texts = {"C", "/", "x", "←", "7", "8", "9", "-", "4", "5", "6", "+", "1", "2", "3", "()", "0", ".", "+/-", "="};
 	/* 모든 버튼에 대한 배열로 처리 */
 	Buttons[] allb = new Buttons[20];
 	/* 숫자 */
 	boolean numFlag = false;	// 이전에 숫자 입력되었으면 true, 아니면 false
 	boolean pmFlag = false;		// plus false minus true
 	boolean operFlag = false;	// 연산자들 중복 입력 시 에러 핸들링 / 이전에 연산자 입력되었으면 true 아니면 false
-	int braceFlag = 0;	// 괄호 flag. 아무것도 아닐 때 0, ( 누르면 1, ) 누르면 2 (직전 입력 기준)
 	int openCount = 0;	// 괄호 ( 개수
 	int closeCount = 0;	// 괄호 ) 개수
 	boolean resFlag = false;	// 결과값 출력한 바로 직후면 true
@@ -47,7 +46,7 @@ public class Calculator extends JFrame {
 	/* 키 버튼 입력을 받는 아래 부분 패널 */
 	class keyPanel extends JPanel {
 		keyPanel() {
-			setLayout(new GridLayout(5, 4, 1, 1));
+			setLayout(new GridLayout(5, 4, 1, 1)); 
 			setBackground(Color.WHITE);
 			MyActionListener mAc = new MyActionListener();
 			int ch;
@@ -102,7 +101,10 @@ public class Calculator extends JFrame {
 			String input = btn.getText();
 			String bef = exp.getText();
 			int ind = findInd(input);
-			char ch;
+			int befCh = -1;
+			/* 이전 문자 값 처리 */
+			if (bef.length() != 0)
+				befCh = findBefCh(bef.charAt(bef.length()-1));
 			/* 결과값 출력 후, 이어서 연산 하고 싶을 때 */
 			if (resFlag == true)
 				if (ind == 1 || ind == 2 || ind == 7 || ind == 11)
@@ -118,10 +120,24 @@ public class Calculator extends JFrame {
 					exp.setText("");
 					res.setText("");
 					numFlag = pmFlag = operFlag = dotFlag = false;
-					zeroCount = braceFlag = 0;
+					zeroCount = openCount = closeCount = 0;
 					return ;
 				/* BackSpace일때, 문자 하나 삭제 */
 				case 3 : 
+					switch(befCh)
+					{
+						case 0: case -1:	// 연산자 삭제
+
+							break;
+						case 1:	// 숫자 삭제
+
+							break;
+						case 2:	// 열린 괄호 삭제
+
+							break;
+						case 3:	// 닫힌 괄호 삭제
+
+					}
 					exp.setText(bef.substring(0, bef.length()-1));
 					return ;
 				/* 숫자일 경우 */
@@ -148,8 +164,31 @@ public class Calculator extends JFrame {
 					break;
 				/* 괄호 입력 시 */
 				case 15 :
-
-					System.out.println("brace : "+braceFlag);
+					switch(befCh)
+					{
+						case 0: case -1:	// 연산자 다음엔 무조건 (
+							input = "(";
+							break;
+						case 1:	// 숫자 다음 열린상태엔 ) 닫힌상태엔 x(
+							if (openCount > closeCount)
+								input = ")";
+							else
+								input = "x(";
+							break;
+						case 2:	// 열린 괄호 다음 열린상태일 때 (
+							if (openCount > closeCount)
+								input = "(";
+							break;
+						case 3:	// 닫힌 괄호 다음 열린상태일 때 ) 닫힌상태일 때 x(
+							if (openCount > closeCount)
+								input = ")";
+							else
+								input = "x(";
+					}
+					if (input.equals("(") || input.equals("x("))
+						openCount++;
+					else
+						closeCount++;
 					break;
 				/* . 일때 */
 				case 17 : 
@@ -186,7 +225,7 @@ public class Calculator extends JFrame {
 					break;
 				/* = 일때, 결과값 도출 */
 				case 19 :
-					if (operFlag == true)
+					if (operFlag == true || openCount != closeCount)
 					{
 						res.setText("잘못된 연산식입니다");
 						return ;
@@ -217,6 +256,21 @@ public class Calculator extends JFrame {
 		}
 		return -1;
 	}
+	int findBefCh(char ch)
+	{
+		/* 연산자 */
+		if (ch == '+' || ch == '-' || ch == 'x' || ch == '/')
+			return 0;
+		/* 숫자 */
+		if (ch >= '0' && ch <= '9')
+			return 1;
+		/* 괄호 */
+		if (ch == '(')
+			return 2;
+		if (ch == ')')
+			return 3;
+		return -1;
+	}
 	void handleFlags(int ind)
 	{
 		/* 숫자입력 flag */
@@ -240,9 +294,6 @@ public class Calculator extends JFrame {
 		}
 		else
 			operFlag = false;
-		
-		if (ind != 15 && braceFlag != 1)
-			braceFlag = 0;
 	}
 	/* 중위 -> 후위 */
 	void postfix(String input)
@@ -430,8 +481,8 @@ public class Calculator extends JFrame {
 					case 'x' :
 						bres = ba.multiply(bb);
 						break;
-					case '%' :
-						bres = ba.divide(bb);
+					case '/' :
+						bres = ba.divide(bb, 16, BigDecimal.ROUND_UP);
 						break;
 				}
 				stack.add(0, bres.toString());
@@ -448,8 +499,8 @@ public class Calculator extends JFrame {
 	{
 		switch (ch)
 		{
-		case '+' : case '-' : case 'x' : case '%' : case '/' : 
-			return true;
+			case '+' : case '-' : case 'x' : case '/' : 
+				return true;
 		}
 		return false;
 	}
@@ -460,9 +511,8 @@ public class Calculator extends JFrame {
 			case '(' : return 10;
 			case '+' : 
 			case '-' : return 2;
-			case 'x' :
-			case '/' :
-			case '%' : return 3;
+			case 'x':
+			case '/' : return 3;
 		}
 		return 0;
 	}
@@ -474,8 +524,7 @@ public class Calculator extends JFrame {
 			case '+' : 
 			case '-' : return 2;
 			case 'x' :
-			case '/' :
-			case '%' : return 3;
+			case '/' : return 3;
 		}
 		return 0;
 	}
